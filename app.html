@@ -15,6 +15,7 @@
     <header>
       <h1 v-text="siteName"></h1>
       <button>
+        {{itemsInCart}}
         <span class="fa-solid fa-cart-shopping"></span>
         Checkout
       </button>
@@ -29,7 +30,9 @@
           <p>Subject: {{product.subject}}</p>
           <p>Location: {{product.location}}</p>
           <p>Price: £{{product.price}}</p>
-          <p>Spaces: {{product.spaces}}</p>
+          <p>Spaces: {{product.spacesAvailable}}</p>
+          <button v-if="canAddToCart(product)" @click="addToCart(product)">Add To Cart</button>
+          <button v-else disabled>Add to Cart</button>
         </div>
       </main>
     </div>
@@ -42,8 +45,24 @@
         siteName: "Lessons Store",
         showProduct: true,
         products: products,
+        cart: [],
+      },
+      methods: {
+        addToCart: function (product) {
+          this.cart.push(product.id);
+          product.spacesAvailable--;
+        },
+        canAddToCart: function (product) {
+          return product.spacesAvailable > 0;
+        }
+      },
+      computed: {
+        itemsInCart: function () {
+          return this.cart.length || ""
+        }
       }
-    })
+    }
+    )
   </script>
 </body>
 
