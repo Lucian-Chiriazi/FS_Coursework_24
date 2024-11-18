@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+  <script src="products.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <title>Lessons Shop</title>
 </head>
+
 <body>
   <div id="app">
     <header>
@@ -17,18 +20,31 @@
       </button>
     </header>
 
-    <main>
-      
-    </main>
+    <div v-if="showProduct">
+      <main>
+        <div v-for="product in products">
+          <figure>
+            <i v-bind:class="product.image"></i>
+          </figure>
+          <p>Subject: {{product.subject}}</p>
+          <p>Location: {{product.location}}</p>
+          <p>Price: £{{product.price}}</p>
+          <p>Spaces: {{product.spaces}}</p>
+        </div>
+      </main>
+    </div>
   </div>
 
   <script>
     let webstore = new Vue({
       el: '#app',
       data: {
-        siteName: "Lessons Store"
+        siteName: "Lessons Store",
+        showProduct: true,
+        products: products,
       }
     })
   </script>
 </body>
+
 </html>
