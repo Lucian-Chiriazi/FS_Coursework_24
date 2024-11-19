@@ -12,7 +12,7 @@ let products = [
     "subject" : "Music",
     "location" : "H112",
     "price" : 75,
-    "spacesAvailable" : 5,
+    "spacesAvailable" : 7,
     "image" : "fa-solid fa-music"
   },
   {
@@ -28,7 +28,7 @@ let products = [
     "subject" : "English",
     "location" : "H132",
     "price" : 80,
-    "spacesAvailable" : 5,
+    "spacesAvailable" : 11,
     "image" : "fa-solid fa-pencil"
   },
   {
@@ -44,7 +44,7 @@ let products = [
     "subject" : "Photography",
     "location" : "B209",
     "price" : 85,
-    "spacesAvailable" : 5,
+    "spacesAvailable" : 6,
     "image" : "fa-solid fa-camera"
   },
   {
@@ -52,7 +52,7 @@ let products = [
     "subject" : "Robotics",
     "location" : "B202",
     "price" : 200,
-    "spacesAvailable" : 5,
+    "spacesAvailable" : 7,
     "image" : "fa-solid fa-robot"
   },
   {
@@ -60,7 +60,7 @@ let products = [
     "subject" : "History",
     "location" : "F230",
     "price" : 55,
-    "spacesAvailable" : 5,
+    "spacesAvailable" : 9,
     "image" : "fa-solid fa-landmark"
   },
   {
@@ -68,7 +68,7 @@ let products = [
     "subject" : "Art",
     "location" : "R106",
     "price" : 70,
-    "spacesAvailable" : 5,
+    "spacesAvailable" : 10,
     "image" : "fa-solid fa-palette"
   },
   {
@@ -76,7 +76,7 @@ let products = [
     "subject" : "Biology",
     "location" : "A203",
     "price" : 110,
-    "spacesAvailable" : 5,
+    "spacesAvailable" : 10,
     "image" : "fa-solid fa-dna"
   }
 ];

@@ -24,7 +24,8 @@
         Checkout
       </button>
     </header>
-
+    
+    <!-- List of products -->
     <div v-if="showProducts">
       <main>
         <div v-for="product in products">
@@ -41,10 +42,10 @@
       </main>
     </div>
 
+    <!-- Checkout Page -->
     <div v-else>
-      <h1>Welcome to CheckOut Page</h1>
+      <h1>Shopping cart</h1>
       <div>
-        <h2>Your Cart</h2>
         <div v-for="(item, index) in cart" :key="item.id">
           <figure>
             <i v-bind:class="item.image"></i>
@@ -54,6 +55,20 @@
           <p>Price: £{{ item.price }}</p>
           <button @click="removeFromCart(index)">Remove</button>
         </div>
+        <h1>Checkout</h1>
+        <form @submit.prevent>
+          <p>
+            Name:
+            <input type="text" v-model="name" @input="validateName">
+            <span v-if="nameError" class="error">{{ nameError }}</span>
+          </p>
+          <p>
+            Phone:
+            <input type="text" v-model="phone" @input="validatePhone">
+            <span v-if="phoneError" class="error">{{ phoneError }}</span>
+          </p>
+        </form>
+        <button :disabled="!isCheckoutEnabled" @click="performCheckout">Checkout</button>
       </div>
 
     </div>
@@ -66,10 +81,14 @@
         siteName: "Lessons Store",
         showProducts: true,
         products: products,
+        name: "",
+        phone: "",
+        nameError: null,
+        phoneError: null,
         cart: [],
       },
       methods: {
-        addToCart: function (product) {
+        addToCart: function (product) { // Function that add chosen items to cart
           this.cart.push({
             id: product.id,
             subject: product.subject,
@@ -78,22 +97,21 @@
             spacesAvailable: product.spacesAvailable,
             image: product.image
           });
-          product.spacesAvailable--;
         },
         canAddToCart: function (product) {
-          return product.spacesAvailable > this.cartCount(product.id);
+          return product.spacesAvailable > this.cartCount(product.id); // Determine if addToCart button is enabled
         },
-        cartCount: function (id) {
+        cartCount: function (id) { // Helper function to determine if there are enough products to addToCart
           let count = 0;
           for (let i = 0; i < this.cart.length; i++) {
             if (this.cart[i].id === id) {
-              count++;
+              count++; 
             }
           }
           return count;
         },
         showCheckout: function () {
-          this.showProducts = this.showProducts ? false : true;
+          this.showProducts = this.showProducts ? false : true; //Swap value to enable crossing from checkout to Lessons
         },
         removeFromCart: function (index) {
           const removedItem = this.cart.splice(index, 1)[0]; // Remove item from cart and get the removed item
@@ -101,12 +119,32 @@
           if (product) {
             product.spacesAvailable++; // Increase the spaces available for the product
           }
+        },
+        validateName: function () {
+          const nameRegex = /^[a-zA-Z\s]{2,}$/; // Allows letters and spaces, minimum 2 characters
+          this.nameError = !nameRegex.test(this.name.trim())
+            ? "Name must contain only letters and be at least 2 characters long."
+            : null;
+        },
+        validatePhone: function () {
+          const phoneRegex = /^\d{10,}$/; // Minimum 10 digits
+          this.phoneError = !phoneRegex.test(this.phone) ? "Phone must be at least 10 digits." : null;
+        },
+        performCheckout: function () {
+          alert("Checkout successful!");
+          // Reset inputs
+          this.name = "";
+          this.phone = "";
+          this.cart = [];
         }
       },
       computed: {
         showCartItemsCount: function () {
-          return this.cart.length || ""
+          return this.cart.length || "" // Returns number of items in the cart for display
         },
+        isCheckoutEnabled: function () {
+          return this.nameError === null && this.phoneError === null && this.name.trim() !== "" && this.phone.trim() !== "";
+        }
       }
     }
     )
