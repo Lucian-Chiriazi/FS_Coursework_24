@@ -25,8 +25,26 @@
       </button>
     </header>
     
-    <!-- List of products -->
+    <!-- Lesson page -->
     <div v-if="showProducts">
+
+      <!-- Sorting Controls -->
+      <div>
+        <label for="sortAttribute">Sort by:</label>
+        <select id="sortAttribute" v-model="sortAttribute">
+          <option value="subject">Subject</option>
+          <option value="location">Location</option>
+          <option value="price">Price</option>
+          <option value="spacesAvailable">Spaces</option>
+        </select>
+
+        <label for="sortOrder">Order:</label>
+        <select id="sortOrder" v-model="sortOrder">
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+      </div>
+
       <main>
         <div v-for="product in products">
           <figure>
