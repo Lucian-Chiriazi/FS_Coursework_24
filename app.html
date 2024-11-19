@@ -14,14 +14,18 @@
   <div id="app">
     <header>
       <h1 v-text="siteName"></h1>
-      <button>
-        {{itemsInCart}}
+      <button @click="showCheckout" v-if="cart.length > 0">
+        {{showCartItemsCount}}
+        <span class="fa-solid fa-cart-shopping"></span>
+        Checkout
+      </button>
+      <button v-else disabled>
         <span class="fa-solid fa-cart-shopping"></span>
         Checkout
       </button>
     </header>
 
-    <div v-if="showProduct">
+    <div v-if="showProducts">
       <main>
         <div v-for="product in products">
           <figure>
@@ -36,6 +40,23 @@
         </div>
       </main>
     </div>
+
+    <div v-else>
+      <h1>Welcome to CheckOut Page</h1>
+      <div>
+        <h2>Your Cart</h2>
+        <div v-for="(item, index) in cart" :key="item.id">
+          <figure>
+            <i v-bind:class="item.image"></i>
+          </figure>
+          <p>Subject: {{ item.subject }}</p>
+          <p>Location: {{ item.location }}</p>
+          <p>Price: £{{ item.price }}</p>
+          <button @click="removeFromCart(index)">Remove</button>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <script>
@@ -43,23 +64,49 @@
       el: '#app',
       data: {
         siteName: "Lessons Store",
-        showProduct: true,
+        showProducts: true,
         products: products,
         cart: [],
       },
       methods: {
         addToCart: function (product) {
-          this.cart.push(product.id);
+          this.cart.push({
+            id: product.id,
+            subject: product.subject,
+            location: product.location,
+            price: product.price,
+            spacesAvailable: product.spacesAvailable,
+            image: product.image
+          });
           product.spacesAvailable--;
         },
         canAddToCart: function (product) {
-          return product.spacesAvailable > 0;
+          return product.spacesAvailable > this.cartCount(product.id);
+        },
+        cartCount: function (id) {
+          let count = 0;
+          for (let i = 0; i < this.cart.length; i++) {
+            if (this.cart[i].id === id) {
+              count++;
+            }
+          }
+          return count;
+        },
+        showCheckout: function () {
+          this.showProducts = this.showProducts ? false : true;
+        },
+        removeFromCart: function (index) {
+          const removedItem = this.cart.splice(index, 1)[0]; // Remove item from cart and get the removed item
+          const product = this.products.find(product => product.id === removedItem.id); // Find corresponding product
+          if (product) {
+            product.spacesAvailable++; // Increase the spaces available for the product
+          }
         }
       },
       computed: {
-        itemsInCart: function () {
+        showCartItemsCount: function () {
           return this.cart.length || ""
-        }
+        },
       }
     }
     )
