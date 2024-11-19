@@ -145,6 +145,13 @@
         isCheckoutEnabled: function () {
           return this.nameError === null && this.phoneError === null && this.name.trim() !== "" && this.phone.trim() !== "";
         }
+      },
+      watch: {
+        cart: function (newCart) {
+          if (newCart.length === 0) {
+            this.showProducts = true; // Switch back to lessons page when cart is empty
+          }
+        }
       }
     }
     )
