@@ -46,7 +46,7 @@
       </div>
 
       <main>
-        <div v-for="product in products">
+        <div v-for="product in sortedProducts">
           <figure>
             <i v-bind:class="product.image"></i>
           </figure>
@@ -103,6 +103,8 @@
         phone: "",
         nameError: null,
         phoneError: null,
+        sortAttribute: "subject", // Default value
+        sortOrder: "asc", // Default value
         cart: [],
       },
       methods: {
@@ -162,11 +164,26 @@
         },
         isCheckoutEnabled: function () {
           return this.nameError === null && this.phoneError === null && this.name.trim() !== "" && this.phone.trim() !== "";
+        },
+        sortedProducts: function () {
+          return [...this.products].sort((a,b) => {
+            let comparison = 0;
+
+            // Compare values of the selected attribute
+            if (a[this.sortAttribute] > b[this.sortAttribute]) {
+              comparison = 1 // a comes after b
+            } else if (a[this.sortAttribute] < b[this.sortAttribute]) {
+              comparison = -1 // a comes before b
+            }
+
+            // Adjust sorting order based on this.sortOrder
+            return this.sortOrder === "asc" ? comparison : -comparison;
+          });
         }
       },
       watch: {
         cart: function (newCart) {
-          if (newCart.length === 0) {
+          if (newCart.length === 0) { 
             this.showProducts = true; // Switch back to lessons page when cart is empty
           }
         }
