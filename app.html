@@ -99,7 +99,7 @@
       data: {
         siteName: "Lessons Store",
         showProducts: true,
-        products: products,
+        products: [],
         name: "",
         phone: "",
         nameError: null,
@@ -107,6 +107,17 @@
         sortAttribute: "subject", // Default value
         sortOrder: "asc", // Default value
         cart: [],
+      },
+      created: function () {
+        fetch("http://localhost:3000/collections/products")
+          .then(response => response.json())
+          .then(json => {
+            console.log('Received products:', json);
+            this.products = json;
+          })
+          .catch(err => {
+            console.error('Error fetching products:', err);
+          });
       },
       methods: {
         addToCart: function (product) { // Function that add chosen items to cart
@@ -152,12 +163,43 @@
           this.phoneError = !phoneRegex.test(this.phone) ? "Phone must be at least 10 digits." : null;
         },
         performCheckout: function () {
-          alert("Checkout successful!");
-          // Reset inputs
-          this.name = "";
-          this.phone = "";
-          this.cart = [];
+          const orderData = {
+            name: this.name.trim(),
+            phone: this.phone.trim(),
+            cart: this.cart.map(item => ({
+              subject: item.subject,
+              location: item.location,
+              price: item.price,
+              quantity: this.cartCount(item.id)
+            }))
+          };
+
+          fetch("http://localhost:3000/collections/order", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(orderData)
+          })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error("Failed to place order");
+              }
+              return response.json();
+            })
+            .then(data => {
+              alert(`Order placed successfully! Order ID: ${data.orderId}`);
+              // Reset inputs and cart
+              this.name = "";
+              this.phone = "";
+              this.cart = [];
+            })
+            .catch(err => {
+              console.error("Error placing order:", err);
+              alert("Failed to place order. Please try again.");
+            });
         }
+
       },
       computed: {
         showCartItemsCount: function () {
