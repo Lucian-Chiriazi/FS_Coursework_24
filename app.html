@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
-  <script src="products.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <title>Lessons Shop</title>
 </head>
-
 <body>
   <div id="app">
     <header>
@@ -26,9 +23,8 @@
       </button>
     </header>
     
-    <!-- Lesson page -->
+    <!-- Lessons Page -->
     <div v-if="showProducts">
-
       <!-- Sorting Controls -->
       <div>
         <label for="sortAttribute">Sort by:</label>
@@ -47,7 +43,7 @@
       </div>
 
       <main>
-        <div v-for="product in sortedProducts">
+        <div v-for="product in sortedProducts" :key="product._id">
           <figure>
             <i v-bind:class="product.image"></i>
           </figure>
@@ -63,15 +59,16 @@
 
     <!-- Checkout Page -->
     <div v-else>
-      <h1>Shopping cart</h1>
+      <h1>Shopping Cart</h1>
       <div>
-        <div v-for="(item, index) in cart" :key="item.id">
+        <div v-for="(item, index) in cart" :key="item._id">
           <figure>
-            <i v-bind:class="item.image"></i>
+            <i v-bind:class="getProduct(item._id).image"></i>
           </figure>
-          <p>Subject: {{ item.subject }}</p>
-          <p>Location: {{ item.location }}</p>
-          <p>Price: £{{ item.price }}</p>
+          <p>Subject: {{ getProduct(item._id).subject }}</p>
+          <p>Location: {{ getProduct(item._id).location }}</p>
+          <p>Price: £{{ getProduct(item._id).price }}</p>
+          <p>Quantity: {{ item.quantity }}</p>
           <button @click="removeFromCart(index)">Remove</button>
         </div>
         <h1>Checkout</h1>
@@ -89,7 +86,6 @@
         </form>
         <button :disabled="!isCheckoutEnabled" @click="performCheckout">Checkout</button>
       </div>
-
     </div>
   </div>
 
@@ -106,13 +102,12 @@
         phoneError: null,
         sortAttribute: "subject", // Default value
         sortOrder: "asc", // Default value
-        cart: [],
+        cart: []
       },
       created: function () {
         fetch("http://localhost:3000/collections/products")
           .then(response => response.json())
           .then(json => {
-            console.log('Received products:', json);
             this.products = json;
           })
           .catch(err => {
@@ -120,57 +115,49 @@
           });
       },
       methods: {
-        addToCart: function (product) { // Function that add chosen items to cart
-          this.cart.push({
-            id: product.id,
-            subject: product.subject,
-            location: product.location,
-            price: product.price,
-            spacesAvailable: product.spacesAvailable,
-            image: product.image
-          });
+        addToCart: function (product) {
+          const cartItem = this.cart.find(item => item._id === product._id);
+          if (cartItem) {
+            cartItem.quantity++;
+          } else {
+            this.cart.push({ _id: product._id, quantity: 1 });
+          }
         },
         canAddToCart: function (product) {
-          return product.spacesAvailable > this.cartCount(product.id); // Determine if addToCart button is enabled
-        },
-        cartCount: function (id) { // Helper function to determine if there are enough products to addToCart
-          let count = 0;
-          for (let i = 0; i < this.cart.length; i++) {
-            if (this.cart[i].id === id) {
-              count++; 
-            }
-          }
-          return count;
+          const cartItem = this.cart.find(item => item._id === product._id);
+          const quantityInCart = cartItem ? cartItem.quantity : 0;
+          return product.spacesAvailable > quantityInCart;
         },
         showCheckout: function () {
-          this.showProducts = this.showProducts ? false : true; //Swap value to enable crossing from checkout to Lessons
+          this.showProducts = !this.showProducts;
         },
         removeFromCart: function (index) {
-          const removedItem = this.cart.splice(index, 1)[0]; // Remove item from cart and get the removed item
-          const product = this.products.find(product => product.id === removedItem.id); // Find corresponding product
-          if (product) {
-            product.spacesAvailable++; // Increase the spaces available for the product
-          }
+          // const cartItem = this.cart[index];
+          // const product = this.products.find(p => p._id === cartItem._id);
+          // if (product) {
+          //   product.spacesAvailable += cartItem.quantity;
+          // }
+          this.cart.splice(index, 1);
         },
         validateName: function () {
-          const nameRegex = /^[a-zA-Z\s]{2,}$/; // Allows letters and spaces, minimum 2 characters
+          const nameRegex = /^[a-zA-Z\s]{2,}$/;
           this.nameError = !nameRegex.test(this.name.trim())
             ? "Name must contain only letters and be at least 2 characters long."
             : null;
         },
         validatePhone: function () {
-          const phoneRegex = /^\d{10,}$/; // Minimum 10 digits
-          this.phoneError = !phoneRegex.test(this.phone) ? "Phone must be at least 10 digits." : null;
+          const phoneRegex = /^\d{10,}$/;
+          this.phoneError = !phoneRegex.test(this.phone)
+            ? "Phone must be at least 10 digits."
+            : null;
         },
         performCheckout: function () {
           const orderData = {
             name: this.name.trim(),
             phone: this.phone.trim(),
             cart: this.cart.map(item => ({
-              subject: item.subject,
-              location: item.location,
-              price: item.price,
-              quantity: this.cartCount(item.id)
+              _id: item._id,
+              quantity: item.quantity
             }))
           };
 
@@ -181,59 +168,68 @@
             },
             body: JSON.stringify(orderData)
           })
-            .then(response => {
-              if (!response.ok) {
-                throw new Error("Failed to place order");
-              }
-              return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
               alert(`Order placed successfully! Order ID: ${data.orderId}`);
-              // Reset inputs and cart
+              const updatePromises = this.cart.map(item => {
+                const product = this.products.find(p => p._id === item._id);
+                if (!product) return;
+                const newSpaces = product.spacesAvailable - item.quantity;
+                return fetch(`http://localhost:3000/collections/lessons/${item._id}`, {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({ spacesAvailable: newSpaces })
+                })
+                  .then(() => {
+                    product.spacesAvailable = newSpaces;
+                  });
+              });
+              return Promise.all(updatePromises);
+            })
+            .then(() => {
+              this.cart = [];
               this.name = "";
               this.phone = "";
-              this.cart = [];
+              this.showProducts = true;
             })
             .catch(err => {
-              console.error("Error placing order:", err);
-              alert("Failed to place order. Please try again.");
+              console.error("Error during checkout:", err);
+              alert("Failed to complete checkout. Please try again.");
             });
+        },
+        getProduct: function (_id) {
+          return this.products.find(p => p._id === _id);
         }
-
       },
       computed: {
         showCartItemsCount: function () {
-          return this.cart.length || "" // Returns number of items in the cart for display
+          return this.cart.reduce((total, item) => total + item.quantity, 0);
         },
         isCheckoutEnabled: function () {
-          return this.nameError === null && this.phoneError === null && this.name.trim() !== "" && this.phone.trim() !== "";
+          return (
+            this.nameError === null &&
+            this.phoneError === null &&
+            this.name.trim() !== "" &&
+            this.phone.trim() !== ""
+          );
         },
         sortedProducts: function () {
-          return [...this.products].sort((a,b) => {
-            let comparison = 0;
-
-            // Compare values of the selected attribute
-            if (a[this.sortAttribute] > b[this.sortAttribute]) {
-              comparison = 1 // a comes after b
-            } else if (a[this.sortAttribute] < b[this.sortAttribute]) {
-              comparison = -1 // a comes before b
-            }
-
-            // Adjust sorting order based on this.sortOrder
+          return [...this.products].sort((a, b) => {
+            const comparison = a[this.sortAttribute] > b[this.sortAttribute] ? 1 : -1;
             return this.sortOrder === "asc" ? comparison : -comparison;
           });
         }
       },
       watch: {
         cart: function (newCart) {
-          if (newCart.length === 0) { 
-            this.showProducts = true; // Switch back to lessons page when cart is empty
+          if (newCart.length === 0) {
+            this.showProducts = true;
           }
         }
       }
-    }
-    )
+    });
   </script>
 </body>
-
 </html>
