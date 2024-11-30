@@ -122,6 +122,7 @@
           } else {
             this.cart.push({ _id: product._id, quantity: 1 });
           }
+          product.spacesAvailable--;
         },
         canAddToCart: function (product) {
           const cartItem = this.cart.find(item => item._id === product._id);
@@ -132,11 +133,11 @@
           this.showProducts = !this.showProducts;
         },
         removeFromCart: function (index) {
-          // const cartItem = this.cart[index];
-          // const product = this.products.find(p => p._id === cartItem._id);
-          // if (product) {
-          //   product.spacesAvailable += cartItem.quantity;
-          // }
+          const cartItem = this.cart[index];
+          const product = this.products.find(p => p._id === cartItem._id);
+          if (product) {
+            product.spacesAvailable += cartItem.quantity;
+          }
           this.cart.splice(index, 1);
         },
         validateName: function () {
