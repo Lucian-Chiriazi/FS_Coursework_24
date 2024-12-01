@@ -12,6 +12,14 @@
   <div id="app">
     <header>
       <h1 v-text="siteName"></h1>
+      <div class="search-bar">
+        <input
+          type="text"
+          placeholder="Search for lessons"
+          v-model="searchQuery"
+          @input="searchLessons"
+        />
+      </div>
       <button @click="showCheckout" v-if="cart.length > 0">
         {{showCartItemsCount}}
         <span class="fa-solid fa-cart-shopping"></span>
@@ -43,16 +51,21 @@
       </div>
 
       <main>
-        <div v-for="product in sortedProducts" :key="product._id">
-          <figure>
-            <i v-bind:class="product.image"></i>
-          </figure>
-          <p>Subject: {{product.subject}}</p>
-          <p>Location: {{product.location}}</p>
-          <p>Price: £{{product.price}}</p>
-          <p>Spaces: {{product.spacesAvailable}}</p>
-          <button v-if="canAddToCart(product)" @click="addToCart(product)">Add To Cart</button>
-          <button v-else disabled>Add to Cart</button>
+        <div v-if="products.length === 0">
+          <p>No lessons found!</p>
+        </div>
+        <div v-else>
+          <div v-for="product in sortedProducts" :key="product._id">
+            <figure>
+              <i v-bind:class="product.image"></i>
+            </figure>
+            <p>Subject: {{product.subject}}</p>
+            <p>Location: {{product.location}}</p>
+            <p>Price: £{{product.price}}</p>
+            <p>Spaces: {{product.spacesAvailable}}</p>
+            <button v-if="canAddToCart(product)" @click="addToCart(product)">Add To Cart</button>
+            <button v-else disabled>Add to Cart</button>
+          </div>
         </div>
       </main>
     </div>
@@ -95,6 +108,7 @@
       data: {
         siteName: "Lessons Store",
         showProducts: true,
+        searchQuery: "",
         products: [],
         name: "",
         phone: "",
@@ -105,7 +119,11 @@
         cart: []
       },
       created: function () {
-        fetch("http://localhost:3000/collections/products")
+        this.fetchProducts();
+      },
+      methods: {
+        fetchProducts: function () {
+          fetch("http://localhost:3000/collections/products")
           .then(response => response.json())
           .then(json => {
             this.products = json;
@@ -113,8 +131,23 @@
           .catch(err => {
             console.error('Error fetching products:', err);
           });
-      },
-      methods: {
+        },
+        searchLessons: function () {
+          if (this.searchQuery.trim() === "") {
+            // Reset products to the full list when search query is empty
+            this.fetchProducts();
+            return;
+          }
+
+          fetch(`http://localhost:3000/search?q=${encodeURIComponent(this.searchQuery)}`)
+            .then(response => response.json())
+            .then(data => {
+              this.products = data; // Update the products list with the filtered results
+            })
+            .catch(err => {
+              console.error("Error during search:", err);
+            });
+        },
         addToCart: function (product) {
           const cartItem = this.cart.find(item => item._id === product._id);
           if (cartItem) {
@@ -122,7 +155,6 @@
           } else {
             this.cart.push({ _id: product._id, quantity: 1 });
           }
-          product.spacesAvailable--;
         },
         canAddToCart: function (product) {
           const cartItem = this.cart.find(item => item._id === product._id);
@@ -133,11 +165,11 @@
           this.showProducts = !this.showProducts;
         },
         removeFromCart: function (index) {
-          const cartItem = this.cart[index];
-          const product = this.products.find(p => p._id === cartItem._id);
-          if (product) {
-            product.spacesAvailable += cartItem.quantity;
-          }
+          // const cartItem = this.cart[index];
+          // const product = this.products.find(p => p._id === cartItem._id);
+          // if (product) {
+          //   product.spacesAvailable += cartItem.quantity;
+          // }
           this.cart.splice(index, 1);
         },
         validateName: function () {
