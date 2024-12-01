@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <title>Lessons Shop</title>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1 v-text="siteName"></h1>
+      <div class="search-bar">
+        <input
+          type="text"
+          placeholder="Search for lessons"
+          v-model="searchQuery"
+          @input="searchLessons"
+        />
+      </div>
+      <button @click="showCheckout" v-if="cart.length > 0">
+        {{showCartItemsCount}}
+        <span class="fa-solid fa-cart-shopping"></span>
+        Checkout
+      </button>
+      <button v-else disabled>
+        <span class="fa-solid fa-cart-shopping"></span>
+        Checkout
+      </button>
+    </header>
+    
+    <!-- Lessons Page -->
+    <div v-if="showProducts">
+      <!-- Sorting Controls -->
+      <div>
+        <label for="sortAttribute">Sort by:</label>
+        <select id="sortAttribute" v-model="sortAttribute">
+          <option value="subject">Subject</option>
+          <option value="location">Location</option>
+          <option value="price">Price</option>
+          <option value="spacesAvailable">Spaces</option>
+        </select>
+
+        <label for="sortOrder">Order:</label>
+        <select id="sortOrder" v-model="sortOrder">
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+      </div>
+
+      <main>
+        <div v-if="products.length === 0">
+          <p>No lessons found!</p>
+        </div>
+        <div v-else>
+          <div v-for="product in sortedProducts" :key="product._id">
+            <figure>
+              <i v-bind:class="product.image"></i>
+            </figure>
+            <p>Subject: {{product.subject}}</p>
+            <p>Location: {{product.location}}</p>
+            <p>Price: £{{product.price}}</p>
+            <p>Spaces: {{product.spacesAvailable}}</p>
+            <button v-if="canAddToCart(product)" @click="addToCart(product)">Add To Cart</button>
+            <button v-else disabled>Add to Cart</button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Checkout Page -->
+    <div v-else>
+      <h1>Shopping Cart</h1>
+      <div>
+        <div v-for="(item, index) in cart" :key="item._id">
+          <figure>
+            <i v-bind:class="getProduct(item._id).image"></i>
+          </figure>
+          <p>Subject: {{ getProduct(item._id).subject }}</p>
+          <p>Location: {{ getProduct(item._id).location }}</p>
+          <p>Price: £{{ getProduct(item._id).price }}</p>
+          <p>Quantity: {{ item.quantity }}</p>
+          <button @click="removeFromCart(index)">Remove</button>
+        </div>
+        <h1>Checkout</h1>
+        <form @submit.prevent>
+          <p>
+            Name:
+            <input type="text" v-model="name" @input="validateName">
+            <span v-if="nameError" class="error">{{ nameError }}</span>
+          </p>
+          <p>
+            Phone:
+            <input type="text" v-model="phone" @input="validatePhone">
+            <span v-if="phoneError" class="error">{{ phoneError }}</span>
+          </p>
+        </form>
+        <button :disabled="!isCheckoutEnabled" @click="performCheckout">Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let webstore = new Vue({
+      el: '#app',
+      data: {
+        siteName: "Lessons Store",
+        showProducts: true,
+        searchQuery: "",
+        products: [],
+        name: "",
+        phone: "",
+        nameError: null,
+        phoneError: null,
+        sortAttribute: "subject", // Default value
+        sortOrder: "asc", // Default value
+        cart: []
+      },
+      created: function () {
+        this.fetchProducts();
+      },
+      methods: {
+        fetchProducts: function () {
+          fetch("http://localhost:3000/collections/products")
+          .then(response => response.json())
+          .then(json => {
+            this.products = json;
+          })
+          .catch(err => {
+            console.error('Error fetching products:', err);
+          });
+        },
+        searchLessons: function () {
+          if (this.searchQuery.trim() === "") {
+            // Reset products to the full list when search query is empty
+            this.fetchProducts();
+            return;
+          }
+
+          fetch(`http://localhost:3000/search?q=${encodeURIComponent(this.searchQuery)}`)
+            .then(response => response.json())
+            .then(data => {
+              this.products = data; // Update the products list with the filtered results
+            })
+            .catch(err => {
+              console.error("Error during search:", err);
+            });
+        },
+        addToCart: function (product) {
+          const cartItem = this.cart.find(item => item._id === product._id);
+          if (cartItem) {
+            cartItem.quantity++;
+          } else {
+            this.cart.push({ _id: product._id, quantity: 1 });
+          }
+        },
+        canAddToCart: function (product) {
+          const cartItem = this.cart.find(item => item._id === product._id);
+          const quantityInCart = cartItem ? cartItem.quantity : 0;
+          return product.spacesAvailable > quantityInCart;
+        },
+        showCheckout: function () {
+          this.showProducts = !this.showProducts;
+        },
+        removeFromCart: function (index) {
+          // const cartItem = this.cart[index];
+          // const product = this.products.find(p => p._id === cartItem._id);
+          // if (product) {
+          //   product.spacesAvailable += cartItem.quantity;
+          // }
+          this.cart.splice(index, 1);
+        },
+        validateName: function () {
+          const nameRegex = /^[a-zA-Z\s]{2,}$/;
+          this.nameError = !nameRegex.test(this.name.trim())
+            ? "Name must contain only letters and be at least 2 characters long."
+            : null;
+        },
+        validatePhone: function () {
+          const phoneRegex = /^\d{10,}$/;
+          this.phoneError = !phoneRegex.test(this.phone)
+            ? "Phone must be at least 10 digits."
+            : null;
+        },
+        performCheckout: function () {
+          const orderData = {
+            name: this.name.trim(),
+            phone: this.phone.trim(),
+            cart: this.cart.map(item => ({
+              _id: item._id,
+              quantity: item.quantity
+            }))
+          };
+
+          fetch("http://localhost:3000/collections/order", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(orderData)
+          })
+            .then(response => response.json())
+            .then(data => {
+              alert(`Order placed successfully! Order ID: ${data.orderId}`);
+              const updatePromises = this.cart.map(item => {
+                const product = this.products.find(p => p._id === item._id);
+                if (!product) return;
+                const newSpaces = product.spacesAvailable - item.quantity;
+                return fetch(`http://localhost:3000/collections/lessons/${item._id}`, {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({ spacesAvailable: newSpaces })
+                })
+                  .then(() => {
+                    product.spacesAvailable = newSpaces;
+                  });
+              });
+              return Promise.all(updatePromises);
+            })
+            .then(() => {
+              this.cart = [];
+              this.name = "";
+              this.phone = "";
+              this.showProducts = true;
+            })
+            .catch(err => {
+              console.error("Error during checkout:", err);
+              alert("Failed to complete checkout. Please try again.");
+            });
+        },
+        getProduct: function (_id) {
+          return this.products.find(p => p._id === _id);
+        }
+      },
+      computed: {
+        showCartItemsCount: function () {
+          return this.cart.reduce((total, item) => total + item.quantity, 0);
+        },
+        isCheckoutEnabled: function () {
+          return (
+            this.nameError === null &&
+            this.phoneError === null &&
+            this.name.trim() !== "" &&
+            this.phone.trim() !== ""
+          );
+        },
+        sortedProducts: function () {
+          return [...this.products].sort((a, b) => {
+            const comparison = a[this.sortAttribute] > b[this.sortAttribute] ? 1 : -1;
+            return this.sortOrder === "asc" ? comparison : -comparison;
+          });
+        }
+      },
+      watch: {
+        cart: function (newCart) {
+          if (newCart.length === 0) {
+            this.showProducts = true;
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
