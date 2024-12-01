@@ -106,6 +106,7 @@
     let webstore = new Vue({
       el: '#app',
       data: {
+        SERVER_URL: "https://fs-coursework-24-backend.onrender.com",
         siteName: "Lessons Store",
         showProducts: true,
         searchQuery: "",
@@ -123,7 +124,7 @@
       },
       methods: {
         fetchProducts: function () {
-          fetch("http://localhost:3000/collections/products")
+          fetch(`${this.SERVER_URL}/collections/products`)
           .then(response => response.json())
           .then(json => {
             this.products = json;
@@ -139,7 +140,7 @@
             return;
           }
 
-          fetch(`http://localhost:3000/search?q=${encodeURIComponent(this.searchQuery)}`)
+          fetch(`${this.SERVER_URL}/search?q=${encodeURIComponent(this.searchQuery)}`)
             .then(response => response.json())
             .then(data => {
               this.products = data; // Update the products list with the filtered results
@@ -194,7 +195,7 @@
             }))
           };
 
-          fetch("http://localhost:3000/collections/order", {
+          fetch(`${this.SERVER_URL}/collections/order`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
@@ -208,7 +209,7 @@
                 const product = this.products.find(p => p._id === item._id);
                 if (!product) return;
                 const newSpaces = product.spacesAvailable - item.quantity;
-                return fetch(`http://localhost:3000/collections/lessons/${item._id}`, {
+                return fetch(`${this.SERVER_URL}/collections/lessons/${item._id}`, {
                   method: "PUT",
                   headers: {
                     "Content-Type": "application/json"
